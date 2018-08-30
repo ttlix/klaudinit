@@ -2,7 +2,7 @@
 PRJ_NAME=klaudinit
 SCM_NAME=titanlixio/$PRJ_NAME
 SCM_URL=https://github.com/$SCM_NAME.git
-SCM_CLEAN=${SCM_CLEAN:-1}
+SCM_CLEAN=${SCM_CLEAN:-0}
 ANS_BOOK=${ANS_BOOK:-"base"}
 ANS_CONF=$@
 KLAUDENV=${KLAUDENV:-"dev"}
@@ -26,6 +26,8 @@ cd /tmp
   && git clone $SCM_URL
 [ -d $PRJ_NAME ] \
   && cd $PRJ_NAME \
+  && mkdir -p vaults \
+  && touch vaults/vpassfile \
   && ansible-playbook \
     -i envs/${KLAUDENV}.ini \
     $ANS_CONF \
