@@ -153,3 +153,82 @@
     - swap
   when:
     - swap_part
+
+- name: Create groups
+  group:
+    name:     "{{item.name}}"
+    gid:      "{{item.gid}}"
+    state:    present
+  with_items: "{{group_items}}"
+  tags:
+    - base
+    - groups
+  when:
+    - group_items is defined
+
+- name: Create users
+  user:
+    name:     "{{item.name}}"
+    uid:      "{{item.uid}}"
+    group:    "{{item.group}}"
+    groups:   "{{item.groups}}"
+    password: "{{item.password}}"
+    state:    present
+  with_items: "{{user_items}}"
+  tags:
+    - base
+    - users
+  when:
+    - user_items is defined
+
+- name: Yum install packages
+  yum:
+    name: "{{ yum_default_packages }}"
+  tags:
+    - base
+    - pkgs
+  when:
+    - yum_default_packages is defined
+
+- name: Yum install crond
+  yum:
+    name: "{{ yum_crond_packages }}"
+    state: present
+  tags:
+    - base
+    - pkgs
+    - crond
+  when:
+    - yum_crond_packages is defined
+
+- name: Systemd start crond
+  systemd:
+    name: crond
+    state: started
+    enabled: yes
+  tags:
+    - base
+    - crond
+
+- name: Yum install mysql repo
+  yum:
+    name:  "{{yum_mysql_repo_packges}}"
+    state: present
+  tags:
+    - base
+    - pkgs
+    - mysql
+  when:
+    - yum_mysql_repo_packges is defined
+
+
+- name: Yum install mysql client
+  yum: 
+    name:  "{{yum_mysql_packages}}"
+    state: present
+  tags:
+    - base
+    - pkgs
+    - mysql
+  when:
+    - yum_mysql_repo_packges is defined
