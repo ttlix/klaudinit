@@ -9,7 +9,8 @@ KLAUDENV=${KLAUDENV:-"dev"}
 
 yum install -y \
   git \
-  ansible 
+  ansible \
+  openssh-clients \
 
 mkdir -p $HOME/.ssh
 chmod 700 $HOME/.ssh
@@ -18,16 +19,20 @@ chmod 700 $HOME/.ssh
   && cat $HOME/.ssh/id_rsa.pub | tee -a $HOME/.ssh/authorized_keys \
   && chmod 600 $HOME/.ssh/authorized_keys
 
-
 cd /tmp
 [ $SCM_CLEAN -gt 0 ] \
   && rm -rf $PRJ_NAME
 [ ! -d $PRJ_NAME ] \
   && git clone $SCM_URL
+if [ ! -f $PRJ_NAME/vaults/vpassfile ]; then
+  vpasslen=8
+  vpassstr=$(openssl rand -base64 32|cut -c 1-$vpasslen|sed 's/\//=/g')
+  mkdir -p $PRJ_NAME/vaults
+  touch $PRJ_NAME/vaults/vpassfile
+  echo $vpassstr | tee -a $PRJ_NAME/vaults/vpassfile
+fi
 [ -d $PRJ_NAME ] \
   && cd $PRJ_NAME \
-  && mkdir -p vaults \
-  && touch vaults/vpassfile \
   && ansible-playbook \
     -i envs/${KLAUDENV}.ini \
     $ANS_CONF \
