@@ -1,0 +1,134 @@
+---
+
+- name: Hello World
+  command: echo "klaudenv = '{{klaudenv}}'"
+  tags:
+    - base
+  register: echo
+  tags: 
+    - hello
+  when:
+    - klaudenv == 'vbox'
+
+- debug: var=echo.stdout_lines
+  tags: 
+    - hello
+  when:
+    - klaudenv == 'vbox'
+
+- name: Init hostname
+  hostname:
+    name: "{{NODE_NAME}}.{{NODE_DOMAIN}}"
+  tags:
+    - base
+  when:
+    - NODE_NAME is defined
+    - NODE_DOMAIN is defined
+
+- name: Write hostname
+  shell: "hostname > /etc/hostname"
+  tags:
+    - base
+  when:
+    - NODE_NAME is defined
+    - NODE_DOMAIN is defined
+
+- name: Add Volume Partition
+  parted:
+    device: "{{VOL1_NAME}}"
+    number: "{{VOL1_PART}}"
+    state: present
+  register: vols_part1
+  tags:
+    - base
+    - vols
+  when:
+    - VOLS_PART
+
+- debug: var=vols_part1
+  tags:
+    - base
+    - vols
+  when:
+    - VOLS_PART
+
+- name: Make filesystem
+  filesystem:
+    fstype: "{{VOL1_TYPE}}"
+    dev:    "{{VOL1_NAME}}{{VOL1_PART}}"
+  register: vols_mkfs1
+  tags:
+    - base
+    - vols
+  when:
+    - VOLS_PART
+
+- debug: var=vols_mkfs1
+  tags:
+    - base
+    - vols
+  when:
+    - VOLS_PART
+
+- name: Mount home in fstab
+  mount:
+    boot:   yes
+    path:   "{{VOL1_PATH}}"
+    src:    "{{VOL1_NAME}}{{VOL1_PART}}"
+    fstype: "{{VOL1_TYPE}}"
+    state:  mounted
+  tags:
+    - base
+    - vols
+  when:
+    - VOLS_PART
+
+- name: Create swap file
+  shell: "dd if=/dev/zero of={{SWAP_PATH}} bs={{SWAP_SIZE}} count={{SWAP_COUNT}}"
+  register: swap_init
+  tags:
+    - base
+    - swap
+  when:
+    - SWAP_PART
+
+- debug: var=swap_init
+  tags:
+    - base
+    - swap
+
+- name: Make swap filesystem
+  shell: "chmod 600 {{SWAP_PATH}}; mkswap {{SWAP_PATH}};"
+  register: swap_mkfs
+  tags:
+    - base
+    - swap
+  when:
+    - SWAP_PART
+
+- debug: var=swap_mkfs
+  tags:
+    - base
+    - swap
+  when:
+    - SWAP_PART
+
+- name: Mount swap in fstab
+  lineinfile:
+    dest:   /etc/fstab 
+    regexp: "{{SWAP_EXPR}}" 
+    line:   "{{SWAP_PATH}} none swap sw 0 0"
+    state:  present
+  tags:
+    - base
+    - swap
+  when:
+    - SWAP_PART
+
+- name: Swap on
+  command: swapon -a
+  tags:
+    - base
+    - swap
+  when:
+    - SWAP_PART
