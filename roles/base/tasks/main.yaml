@@ -1,129 +1,149 @@
 ---
 
 - name: Hello World
-  command: echo "klaudenv = '{{klaudenv}}'"
+  debug: msg="klaudenv = {{klaudenv}}"
   tags:
     - base
-  register: echo
-  tags: 
-    - hello
-  when:
-    - klaudenv == 'vbox'
-
-- debug: var=echo.stdout_lines
-  tags: 
+  tags:
     - hello
   when:
     - klaudenv == 'vbox'
 
 - name: Init hostname
   hostname:
-    name: "{{NODE_NAME}}.{{NODE_DOMAIN}}"
+    name: "{{node_name}}.{{node_domain}}"
   tags:
     - base
   when:
-    - NODE_NAME is defined
-    - NODE_DOMAIN is defined
+    - node_name is defined
+    - node_domain is defined
 
 - name: Write hostname
   shell: "hostname > /etc/hostname"
   tags:
     - base
   when:
-    - NODE_NAME is defined
-    - NODE_DOMAIN is defined
+    - node_name is defined
+    - node_domain is defined
+
+- name: Show Vols
+  debug: msg="{{item}}"
+  with_items: "{{vols_items}}"
+  tags:
+    - base
+  tags:
+    - hello
+  when:
+    - klaudenv == 'vbox'
+    - vols_items is defined
 
 - name: Add Volume Partition
   parted:
-    device: "{{VOL1_NAME}}"
-    number: "{{VOL1_PART}}"
+    device: "{{item.name}}"
+    number: "{{item.part}}"
     state: present
-  register: vols_part1
+  with_items: "{{vols_items}}"
+  register: vols_part_result
   tags:
     - base
     - vols
   when:
-    - VOLS_PART
+    - vols_part
 
-- debug: var=vols_part1
+- debug: var=vols_part_result
   tags:
     - base
     - vols
   when:
-    - VOLS_PART
+    - vols_part
 
 - name: Make filesystem
   filesystem:
-    fstype: "{{VOL1_TYPE}}"
-    dev:    "{{VOL1_NAME}}{{VOL1_PART}}"
-  register: vols_mkfs1
+    fstype: "{{item.type}}"
+    dev:    "{{item.name}}{{item.part}}"
+  with_items: "{{vols_items}}"
+  register: vols_mkfs_result
   tags:
     - base
     - vols
   when:
-    - VOLS_PART
+    - vols_part
 
-- debug: var=vols_mkfs1
+- debug: var=vols_mkfs_result
   tags:
     - base
     - vols
   when:
-    - VOLS_PART
+    - vols_part
 
 - name: Mount home in fstab
   mount:
     boot:   yes
-    path:   "{{VOL1_PATH}}"
-    src:    "{{VOL1_NAME}}{{VOL1_PART}}"
-    fstype: "{{VOL1_TYPE}}"
+    path:   "{{item.path}}"
+    src:    "{{item.name}}{{item.part}}"
+    fstype: "{{item.type}}"
     state:  mounted
+  with_items: "{{vols_items}}"
   tags:
     - base
     - vols
   when:
-    - VOLS_PART
+    - vols_part
+
+- name: Swap off
+  command: swapoff -a
+  tags:
+    - base
+    - swap
+  when:
+    - swap_part
 
 - name: Create swap file
-  shell: "dd if=/dev/zero of={{SWAP_PATH}} bs={{SWAP_SIZE}} count={{SWAP_COUNT}}"
-  register: swap_init
+  shell: "dd if=/dev/zero of={{item.path}} bs={{item.size}} count={{item.count}}"
+  with_items: "{{swap_items}}"
+  register: swap_init_result
   tags:
     - base
     - swap
   when:
-    - SWAP_PART
+    - swap_part
 
-- debug: var=swap_init
+- debug: var=swap_init_result
   tags:
     - base
     - swap
+  when:
+    - swap_part
 
 - name: Make swap filesystem
-  shell: "chmod 600 {{SWAP_PATH}}; mkswap {{SWAP_PATH}};"
-  register: swap_mkfs
+  shell: "chmod 600 {{item.path}}; mkswap {{item.path}};"
+  with_items: "{{swap_items}}"
+  register: swap_mkfs_result
   tags:
     - base
     - swap
   when:
-    - SWAP_PART
+    - swap_part
 
-- debug: var=swap_mkfs
+- debug: var=swap_mkfs_result
   tags:
     - base
     - swap
   when:
-    - SWAP_PART
+    - swap_part
 
 - name: Mount swap in fstab
   lineinfile:
     dest:   /etc/fstab 
-    regexp: "{{SWAP_EXPR}}" 
-    line:   "{{SWAP_PATH}} none swap sw 0 0"
+    regexp: "{{item.name}}" 
+    line:   "{{item.path}} none swap sw 0 0"
     state:  present
+  with_items: "{{swap_items}}"
   tags:
     - base
     - swap
   when:
-    - SWAP_PART
+    - swap_part
 
 - name: Swap on
   command: swapon -a
@@ -131,4 +151,4 @@
     - base
     - swap
   when:
-    - SWAP_PART
+    - swap_part

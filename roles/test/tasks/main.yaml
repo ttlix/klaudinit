@@ -1,0 +1,10 @@
+---
+
+- name: Split Text
+  shell: |
+    echo '501#ttlix#ttlix,staff' | sed 's/\#/\ /g'
+  register: groupvars
+
+- debug: var=groupvars
+
+- debug: msg="{{yum_default_packages}}\n{{swap_items}}"
