@@ -1,0 +1,10 @@
+---
+
+swap_part: False
+
+swap_items:
+  - name: swapfile
+    path: /home/swapfile
+    size: 1024
+    count: 2000000
+

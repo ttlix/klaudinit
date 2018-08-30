@@ -1,0 +1,4 @@
+---
+
+yum_crond_packages:
+  - cronie

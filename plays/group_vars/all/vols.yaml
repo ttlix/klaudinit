@@ -1,0 +1,9 @@
+---
+
+vols_part: False
+
+vols_items:
+  - name: /dev/sdb
+    part: 1
+    type: xfs
+    path: /home

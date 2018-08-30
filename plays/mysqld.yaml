@@ -1,0 +1,8 @@
+---
+
+- name:  mysqld.yaml | All roles
+  hosts: mysqld
+  sudo:  False
+
+  roles:
+    - mysqld

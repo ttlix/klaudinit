@@ -1,0 +1,12 @@
+---
+
+yum_default_packages:
+  - wget
+  - curl
+  - unzip
+  - net-tools
+  - sshpass
+  - psmisc
+  - which
+  - expect
+  - epel-release

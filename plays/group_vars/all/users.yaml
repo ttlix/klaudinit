@@ -1,0 +1,16 @@
+---
+
+user_items:
+  - name:  cloud-user
+    password: "$6$rounds=673031$058o6GF4RsWHSVh/$tCcEtRzHOjaHyQb/kNgkiZD6O.Kp3yh2CGVBX7sGL75VHVodghPHag.eXoUvUhCbN07SEsZPCvwoQoS2soK6B1"
+    uid:   1000
+    group: staff
+    groups:
+      - staff
+  - name:  ttlix
+    password: "$6$rounds=673031$058o6GF4RsWHSVh/$tCcEtRzHOjaHyQb/kNgkiZD6O.Kp3yh2CGVBX7sGL75VHVodghPHag.eXoUvUhCbN07SEsZPCvwoQoS2soK6B1"
+    uid:   2001
+    group: ttlix
+    groups: 
+      - staff
+      - ttlix

@@ -1,0 +1,11 @@
+---
+
+yum_mysql_repo_packges:
+  - http://repo.mysql.com/yum/mysql-5.6-community/el/7/x86_64/mysql-community-release-el7-5.noarch.rpm
+
+yum_mysql_packages:
+  - mysql-community-client
+
+yum_mysqld_packages:
+  - mysql-community-server
+

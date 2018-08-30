@@ -1,0 +1,8 @@
+---
+
+- name:  base.yaml | All roles
+  hosts: all
+  sudo:  False
+
+  roles:
+    - base

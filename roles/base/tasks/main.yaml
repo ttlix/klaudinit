@@ -1,0 +1,234 @@
+---
+
+- name: Hello World
+  debug: msg="klaudenv = {{klaudenv}}"
+  tags:
+    - base
+  tags:
+    - hello
+  when:
+    - klaudenv == 'vbox'
+
+- name: Init hostname
+  hostname:
+    name: "{{node_name}}.{{node_domain}}"
+  tags:
+    - base
+  when:
+    - node_name is defined
+    - node_domain is defined
+
+# Duplicated 
+# - name: Write hostname
+#   shell: "hostname > /etc/hostname"
+#   tags:
+#     - base
+#   when:
+#     - node_name is defined
+#     - node_domain is defined
+
+- name: Show Vols
+  debug: msg="{{item}}"
+  with_items: "{{vols_items}}"
+  tags:
+    - base
+  tags:
+    - hello
+  when:
+    - klaudenv == 'vbox'
+    - vols_items is defined
+
+- name: Add Volume Partition
+  parted:
+    device: "{{item.name}}"
+    number: "{{item.part}}"
+    state: present
+  with_items: "{{vols_items}}"
+  register: vols_part_result
+  tags:
+    - base
+    - vols
+  when:
+    - vols_part
+
+- debug: var=vols_part_result
+  tags:
+    - base
+    - vols
+  when:
+    - vols_part
+
+- name: Make filesystem
+  filesystem:
+    fstype: "{{item.type}}"
+    dev:    "{{item.name}}{{item.part}}"
+  with_items: "{{vols_items}}"
+  register: vols_mkfs_result
+  tags:
+    - base
+    - vols
+  when:
+    - vols_part
+
+- debug: var=vols_mkfs_result
+  tags:
+    - base
+    - vols
+  when:
+    - vols_part
+
+- name: Mount home in fstab
+  mount:
+    boot:   yes
+    path:   "{{item.path}}"
+    src:    "{{item.name}}{{item.part}}"
+    fstype: "{{item.type}}"
+    state:  mounted
+  with_items: "{{vols_items}}"
+  tags:
+    - base
+    - vols
+  when:
+    - vols_part
+
+- name: Swap off
+  command: swapoff -a
+  tags:
+    - base
+    - swap
+  when:
+    - swap_part
+
+- name: Create swap file
+  shell: "dd if=/dev/zero of={{item.path}} bs={{item.size}} count={{item.count}}"
+  with_items: "{{swap_items}}"
+  register: swap_init_result
+  tags:
+    - base
+    - swap
+  when:
+    - swap_part
+
+- debug: var=swap_init_result
+  tags:
+    - base
+    - swap
+  when:
+    - swap_part
+
+- name: Make swap filesystem
+  shell: "chmod 600 {{item.path}}; mkswap {{item.path}};"
+  with_items: "{{swap_items}}"
+  register: swap_mkfs_result
+  tags:
+    - base
+    - swap
+  when:
+    - swap_part
+
+- debug: var=swap_mkfs_result
+  tags:
+    - base
+    - swap
+  when:
+    - swap_part
+
+- name: Mount swap in fstab
+  lineinfile:
+    dest:   /etc/fstab 
+    regexp: "{{item.name}}" 
+    line:   "{{item.path}} none swap sw 0 0"
+    state:  present
+  with_items: "{{swap_items}}"
+  tags:
+    - base
+    - swap
+  when:
+    - swap_part
+
+- name: Swap on
+  command: swapon -a
+  tags:
+    - base
+    - swap
+  when:
+    - swap_part
+
+- name: Create groups
+  group:
+    name:     "{{item.name}}"
+    gid:      "{{item.gid}}"
+    state:    present
+  with_items: "{{group_items}}"
+  tags:
+    - base
+    - groups
+  when:
+    - group_items is defined
+
+- name: Create users
+  user:
+    name:     "{{item.name}}"
+    uid:      "{{item.uid}}"
+    group:    "{{item.group}}"
+    groups:   "{{item.groups}}"
+    password: "{{item.password}}"
+    state:    present
+  with_items: "{{user_items}}"
+  tags:
+    - base
+    - users
+  when:
+    - user_items is defined
+
+- name: Yum install packages
+  yum:
+    name: "{{ yum_default_packages }}"
+  tags:
+    - base
+    - pkgs
+  when:
+    - yum_default_packages is defined
+
+- name: Yum install crond
+  yum:
+    name: "{{ yum_crond_packages }}"
+    state: present
+  tags:
+    - base
+    - pkgs
+    - crond
+  when:
+    - yum_crond_packages is defined
+
+- name: Systemd start crond
+  systemd:
+    name: crond
+    state: started
+    enabled: yes
+  tags:
+    - base
+    - crond
+
+- name: Yum install mysql repo
+  yum:
+    name:  "{{yum_mysql_repo_packges}}"
+    state: present
+  tags:
+    - base
+    - pkgs
+    - mysql
+  when:
+    - yum_mysql_repo_packges is defined
+
+
+- name: Yum install mysql client
+  yum: 
+    name:  "{{yum_mysql_packages}}"
+    state: present
+  tags:
+    - base
+    - pkgs
+    - mysql
+  when:
+    - yum_mysql_repo_packges is defined

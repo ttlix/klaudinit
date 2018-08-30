@@ -1,0 +1,9 @@
+---
+
+- name:  test.yaml | All roles
+  hosts: all
+  sudo:  False
+
+  roles:
+    - test
+
