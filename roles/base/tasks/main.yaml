@@ -18,13 +18,14 @@
     - node_name is defined
     - node_domain is defined
 
-- name: Write hostname
-  shell: "hostname > /etc/hostname"
-  tags:
-    - base
-  when:
-    - node_name is defined
-    - node_domain is defined
+# Duplicated 
+# - name: Write hostname
+#   shell: "hostname > /etc/hostname"
+#   tags:
+#     - base
+#   when:
+#     - node_name is defined
+#     - node_domain is defined
 
 - name: Show Vols
   debug: msg="{{item}}"

@@ -1,3 +1,6 @@
 *.retry
+*~
+*.swp
+*.swo
 .bin
 vaults
